@@ -5,10 +5,6 @@ from datetime import datetime
 import csv
 
 
-
-
-
-
 def parse_number(s: str) -> float:
     return float(s.strip().replace(',', '.'))
 
@@ -21,14 +17,16 @@ def interp_yield_curve(x0, y0, x1, y1, x, ndigits=None):
     return round(y, ndigits) if ndigits is not None else y
     #return (y)
 
-# def Calculation_date(Today_Date, EXP_Date):
-#     Today_Date = datetime(Today_Date)
-#     EXP_Date = datetime(EXP_Date)
-#     Number_TodayDay = Today_Date.timetuple().tm_yday
-#     Number_EXPDay = EXP_Date.timetuple().tm_yday
-#     return (Number_EXPDay - Number_TodayDay)/360
+
 def Calculation_date(Today_Date, EXP_Date): #Provisional
-    return (EXP_Date - Today_Date)/360
+    fecha_obj = datetime.strptime(Today_Date, "%Y/%m/%d")
+    Today_Date_N = fecha_obj.timetuple().tm_yday
+
+    fecha_obj_2 = datetime.strptime(EXP_Date, "%Y/%m/%d")
+    EXP_Date_N = fecha_obj_2.timetuple().tm_yday
+
+
+    return (EXP_Date_N - Today_Date_N)/360
 
 ## Calculation for Index Future
 def Calculation_Index_Future(i,T,S,var1):
@@ -43,27 +41,26 @@ def Calculation_Equity_Future(i,T,S,monto,FY,curva):
     print("Valor de FY:",FY)
     print("Valor de Curva:",curva)
     print("Valor de T:",T)
+    print("Valor del Monto:",monto)
     return TP
 
 ## Calculation for Equity Future
 def Calculation_FX_Future(i,T,S,d):
     TP= (S - d)* (1+(i*T))
     return TP
-#def Calculation_FX_Future(i,T,S,d):
- #   TP= S * (1+(i-d)*T)
-  #  return TP
+
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Theoretical Price Calculation       (:))")
         self.geometry("620x620")
-        self.resizable(True, True)
+        self.resizable(True, True) 
 
         main = ttk.Frame(self, padding=12)
         main.pack(fill=tk.BOTH, expand=True)
 
-#Definition of the names used for creater the
+#Crea una variable observable de Tkinter que almacenaran los valores de los elementos interactivos de entrada sin depender de un evento 
         self.x0_var = tk.StringVar()        # Fractions Of Year (x0)
         self.y0_var = tk.StringVar()        # Annualized Rate (y0)
         self.x1_var = tk.StringVar()        # Fractions Of Year (x1)
@@ -72,7 +69,7 @@ class App(tk.Tk):
         self.TD_var  = tk.StringVar()      # Today's day 
         self.S_var  = tk.StringVar()        # S
         self.var1_var  = tk.StringVar()     #entry used for d
-        self.var2_var  = tk.StringVar()     #entry used for Amount
+        self.PayD_var  = tk.StringVar()     #entry used for Amount
         self.var3_var  = tk.StringVar()     #entry used for FY
         self.ANNR_var  = tk.StringVar()     #entry used for ANN_R
         self.i2_var  = tk.StringVar()       #entry used for i2
@@ -89,7 +86,9 @@ class App(tk.Tk):
         for label, r in rows:
             ttk.Label(main, text=label+":").grid(row=r+1, column=0, sticky="e", padx=(0,8), pady=4)
         
-        ttk.Entry(main, textvariable=self.x0_var, width=24).grid(row=1, column=1, sticky="w")
+        ##Con text variable, se vinculan los elementos tk.StringVar() al valor que van a almacenar o monitorear. 
+        #crea un enlace permanente entre widget ↔ variable
+        ttk.Entry(main, textvariable=self.x0_var, width=24).grid(row=1, column=1, sticky="w") 
         ttk.Entry(main, textvariable=self.y0_var, width=24).grid(row=2, column=1, sticky="w")
         ttk.Entry(main, textvariable=self.x1_var, width=24).grid(row=3, column=1, sticky="w")
         ttk.Entry(main, textvariable=self.y1_var, width=24).grid(row=4, column=1, sticky="w")
@@ -107,12 +106,12 @@ class App(tk.Tk):
         self.var1_entry.grid(row=13, column=0, sticky="e",padx=(0,0), pady=0)
         self.var1_entry.grid_remove()
         # La definicion del segundo combo (Etiquetas y su entrada)
-        self.var2_label= ttk.Label(main, text="Dividend Amount")    # Define el nombre que se muestra en a interfaz de la casilla 
-        self.var2_label.grid(row=13, column=0, sticky="w", padx=(0,0), pady=0) 
-        self.var2_label.grid_remove() #No se muestre 
-        self.var2_entry= ttk.Entry(main, textvariable=self.var2_var,  width=20)
-        self.var2_entry.grid(row=13, column=1, sticky="e")
-        self.var2_entry.grid_remove()
+        self.PayD_label= ttk.Label(main, text="Dividend Amount")    # Define el nombre que se muestra en a interfaz de la casilla 
+        self.PayD_label.grid(row=13, column=0, sticky="w", padx=(0,0), pady=0) 
+        self.PayD_label.grid_remove() #No se muestre 
+        self.PayD_entry= ttk.Entry(main, textvariable=self.PayD_var,  width=20)
+        self.PayD_entry.grid(row=13, column=1, sticky="e")
+        self.PayD_entry.grid_remove()
         ### Definiendo las puras etiqueta
         self.FY_label= ttk.Label(main, text="Payment Date")    # Define el nombre que se muestra en a interfaz de la casilla 
         self.FY_label.grid(row=13, column=1, sticky="w", padx=(10,5), pady=0) 
@@ -153,7 +152,7 @@ class App(tk.Tk):
 
     def instrument_Selected(self, event =None):
     
-#Select what happen when is selected each instrument 
+        #Select what happen when is selected each instrument 
         selected = self.combo_var.get()
 
         if selected == "Index Future":
@@ -161,16 +160,16 @@ class App(tk.Tk):
             self.var1_entry.grid()
             
             self.i2_label.grid_remove() #No se muestre
-            self.var2_label.grid_remove() #No se muestre
+            self.PayD_label.grid_remove() #No se muestre
             self.FY_label.grid_remove() #No se muestre
-            self.var2_entry.grid_remove() #Oculta la entrada
+            self.PayD_entry.grid_remove() #Oculta la entrada
 
             
         elif selected == "Equity Futuro":
-            self.var2_label.grid()
+            self.PayD_label.grid()
             self.var1_entry.grid()
             self.FY_label.grid()
-            self.var2_entry.grid()
+            self.PayD_entry.grid()
 
             self.var1_label.grid_remove() #No se muestre
             self.i2_label.grid_remove() #No se muestre
@@ -181,9 +180,9 @@ class App(tk.Tk):
             self.var1_entry.grid()
             
             self.var1_label.grid_remove() #No se muestre
-            self.var2_label.grid_remove() #No se muestre
+            self.PayD_label.grid_remove() #No se muestre
             self.FY_label.grid_remove() #No se muestre
-            self.var2_entry.grid_remove()
+            self.PayD_entry.grid_remove()
             
         else:
             self.var1_label.grid_remove()
@@ -196,12 +195,12 @@ class App(tk.Tk):
             y0 = parse_number(self.y0_var.get())
             x1 = parse_number(self.x1_var.get())
             y1 = parse_number(self.y1_var.get())
-            x  = parse_number(self.x_var.get())  #Cambiar por MD 
-            TD_Date =parse_number(self.TD_var.get())
+            x  = self.x_var.get()  #Cambiar por MD 
+            TD_Date =self.TD_var.get()
             S  = parse_number(self.S_var.get())
             #d  = parse_number(self.d_var.get())
             var1  = parse_number(self.var1_var.get()) 
-            #var2  = parse_number(self.var2_var.get())
+            #PayD  = parse_number(self.PayD_var.get())
             #var3  = parse_number(self.var3_var.get())
             nd = int(self.nd_var.get())
             nd = 0 if nd < 0 else 50 if nd > 50 else nd
@@ -229,11 +228,11 @@ class App(tk.Tk):
                 
             
             elif selected == "Equity Futuro":
-                var2  = parse_number(self.var2_var.get())
-                FX = Calculation_date(TD_Date,var2)
+                PayD  = self.PayD_var.get()
+                FX = Calculation_date(TD_Date,PayD)
 
                 curve= interp_yield_curve(x0, y0, x1, y1, FX, ndigits=nd)
-                result=Calculation_Equity_Future(y,T,S,var2,FX,curve)
+                result=Calculation_Equity_Future(y,T,S,var1,FX,curve)
                 self.write_out2(f"Theoretical Price for an Index Future Result = {result:.{nd}f}")
                 
                 
